@@ -1,3 +1,94 @@
+server:
+  port: 8080
+
+jwt:
+  secret: "dts_microservices_secret_key_for_jwt_verification_2026_super_secure_key_384_bits"
+
 spring:
   application:
-    name: gateway
+    name: gateway-service
+  cloud:
+    gateway:
+      # Cấu hình CORS cho phép Frontend (React/Vite) kết nối không bị chặn
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://localhost:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+      # Cấu hình Route chuyển tiếp request tới các Microservices bên dưới
+      routes:
+        # 1. Identity Service (Đăng nhập, phân quyền)
+        - id: identity-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/auth/**, /api/v1/users/**
+
+        # 2. Content Builder Service (Xây dựng nội dung)
+        - id: content-builder-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/contents/**
+
+        # 3. Examination Service (Thi thử)
+        - id: examination-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/exams/**
+
+        # 4. Practice Service (Ôn luyện)
+        - id: practice-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/v1/practices/**
+
+        # 5. Progress Service (Theo dõi tiến độ)
+        - id: progress-service
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/v1/progress/**
+
+        # 6. Analytics & Notification Service (Báo cáo & Thông báo)
+        - id: analytics-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/v1/analytics/**, /api/v1/notifications/**
+
+        # 7. Media Storage Service (Lưu hình ảnh, video, audio)
+        - id: media-service
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/v1/media/**
+
+        # 8. Declaration Service (Định danh)
+        - id: declaration-service
+          uri: http://localhost:8088
+          predicates:
+            - Path=/api/v1/declarations/**
+
+        # 9. Learning History Service (Lịch sử học)
+        - id: learning-history-service
+          uri: http://localhost:8089
+          predicates:
+            - Path=/api/v1/history/**
+
+        # 10. Tracking Service (Kết quả)
+        - id: tracking-service
+          uri: http://localhost:8090
+          predicates:
+            - Path=/api/v1/tracking/**
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.http.server.reactive: DEBUG
