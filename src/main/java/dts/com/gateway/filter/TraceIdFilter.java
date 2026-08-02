@@ -16,7 +16,7 @@ import java.util.UUID;
 public class TraceIdFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(TraceIdFilter.class);
-    public static final String TRACE_ID_HEADER = "X-Trace-Id";
+    public static final String TRACE_ID_HEADER = "X-Request-ID";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {

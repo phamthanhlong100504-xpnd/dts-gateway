@@ -1,0 +1,31 @@
+services:
+  eureka-server:
+    image: ghcr.io/${GITHUB_OWNER:-phamthanhlong100504-xpnd}/eureka-server:latest
+    container_name: eureka-server
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    mem_limit: 300m
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx128m -Xquickstart"
+    networks:
+      - dts-network
+
+  gateway-service:
+    image: ghcr.io/${GITHUB_OWNER:-phamthanhlong100504-xpnd}/gateway-service:latest
+    container_name: gateway-service
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    mem_limit: 400m
+    environment:
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx200m -Xquickstart"
+      EUREKA_URI: http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    networks:
+      - dts-network
+
+networks:
+  dts-network:
+    external: true

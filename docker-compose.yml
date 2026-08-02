@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  eureka-server:
+    build:
+      context: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    restart: unless-stopped
+    networks:
+      - dts-network
+
+  gateway-service:
+    build:
+      context: .
+    container_name: gateway-service
+    ports:
+      - "8888:8888"
+    environment:
+      - EUREKA_URI=http://eureka-server:8761/eureka/
+    depends_on:
+      - eureka-server
+    restart: unless-stopped
+    networks:
+      - dts-network
+
+networks:
+  dts-network:
+    external: true
