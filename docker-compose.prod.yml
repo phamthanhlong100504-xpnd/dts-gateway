@@ -7,7 +7,7 @@ services:
       - "8761:8761"
     mem_limit: 300m
     environment:
-      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx128m"
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx128m -XX:+UseSerialGC -XX:MaxMetaspaceSize=96m -Xss256k"
     networks:
       - dts-network
 
@@ -19,7 +19,7 @@ services:
       - "8888:8888"
     mem_limit: 400m
     environment:
-      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx200m"
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx200m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m -Xss256k"
       EUREKA_URI: http://eureka-server:8761/eureka/
     depends_on:
       - eureka-server
