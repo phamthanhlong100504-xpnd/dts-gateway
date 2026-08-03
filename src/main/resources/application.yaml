@@ -38,16 +38,22 @@ spring:
             - Path=/api/v1/auth/**, /api/v1/users/**
 
         # 2. Content Builder Service (Xây dựng nội dung)
+        - id: content-builder-internal-block
+          uri: no://op
+          predicates:
+            - Path=/api/v1/content-builder/internal/**
+          filters:
+            - SetStatus=403
         - id: content-builder-service
           uri: lb://content-builder
           predicates:
-            - Path=/api/v1/contents/**
+            - Path=/api/v1/content-builder/**
 
         # 3. Examination Service (Thi thử)
         - id: examination-service
           uri: lb://examination
           predicates:
-            - Path=/api/v1/exams/**
+            - Path=/api/v1/exams/**, /api/v1/exam-criterias/**, /api/v1/exam-rules/**, /api/v1/exam-structures/**, /api/v1/exam-sessions/**, /api/v1/exam-versions/**
 
         # 4. Practice Service (Ôn luyện)
         - id: practice-service
