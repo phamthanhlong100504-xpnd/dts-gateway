@@ -31,7 +31,7 @@ spring:
           predicates:
             - Path=/api/identity/**, /api/v1/auth/**, /api/v1/users/**
           filters:
-            - RewritePath=/api/identity/(?<segment>.*), /api/v1/$\{segment}
+            - RewritePath=/api/identity/v1/(?<segment>.*), /api/v1/$\{segment}
 
         # 2. Practice Service & Question Images
         - id: practice-service
@@ -39,7 +39,7 @@ spring:
           predicates:
             - Path=/api/practice/**, /api/v1/practices/**, /api/v1/exams/**, /api/v1/questions/**, /api/v1/exam-sessions/**
           filters:
-            - RewritePath=/api/practice/(?<segment>.*), /api/v1/$\{segment}
+            - RewritePath=/api/practice/v1/(?<segment>.*), /api/v1/$\{segment}
 
         - id: practice-question-images
           uri: ${PRACTICE_SERVICE_URL:http://dts-practice-service:8087}
@@ -52,23 +52,23 @@ spring:
           predicates:
             - Path=/api/progress/**, /api/v1/progress/**
           filters:
-            - RewritePath=/api/progress/(?<segment>.*), /api/v1/$\{segment}
+            - RewritePath=/api/progress/v1/(?<segment>.*), /api/v1/$\{segment}
 
         # 4. Content Builder Service
         - id: content-builder-service
-          uri: ${CONTENT_BUILDER_SERVICE_URL:http://dts-content-builder:8082}
+          uri: ${CONTENT_BUILDER_SERVICE_URL:http://content-builder:8082}
           predicates:
             - Path=/api/content-builder/**
           filters:
-            - RewritePath=/api/content-builder/(?<segment>.*), /api/v1/content-builder/$\{segment}
+            - RewritePath=/api/content-builder/v1/(?<segment>.*), /api/v1/content-builder/$\{segment}
 
         # 5. Examination Service
         - id: examination-service
-          uri: ${EXAMINATION_SERVICE_URL:http://dts-examination:8088}
+          uri: ${EXAMINATION_SERVICE_URL:http://examination:8088}
           predicates:
             - Path=/api/examination/**
           filters:
-            - RewritePath=/api/examination/(?<segment>.*), /api/v1/$\{segment}
+            - RewritePath=/api/examination/v1/(?<segment>.*), /api/v1/$\{segment}
 
 logging:
   level:
