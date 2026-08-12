@@ -1,28 +1,16 @@
 services:
-  eureka-server:
-    image: ghcr.io/${GITHUB_OWNER:-phamthanhlong100504-xpnd}/eureka-server:latest
-    container_name: eureka-server
-    restart: unless-stopped
-    ports:
-      - "8761:8761"
-    mem_limit: 300m
-    environment:
-      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx128m -XX:+UseSerialGC -XX:MaxMetaspaceSize=96m -Xss256k"
-    networks:
-      - dts-network
-
   gateway-service:
     image: ghcr.io/${GITHUB_OWNER:-phamthanhlong100504-xpnd}/gateway-service:latest
     container_name: gateway-service
     restart: unless-stopped
     ports:
       - "8888:8888"
-    mem_limit: 400m
+    mem_limit: 512m
     environment:
-      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx200m -XX:+UseSerialGC -XX:MaxMetaspaceSize=128m -Xss256k"
-      EUREKA_URI: http://eureka-server:8761/eureka/
-    depends_on:
-      - eureka-server
+      JAVA_TOOL_OPTIONS: "-Djava.net.preferIPv4Stack=true -Xms128m -Xmx384m"
+      IDENTITY_SERVICE_URL: "http://dts-identity-service:8081"
+      PRACTICE_SERVICE_URL: "http://dts-practice-service:8087"
+      PROGRESS_SERVICE_URL: "http://dts-progress:8083"
     networks:
       - dts-network
 

@@ -1,8 +1,9 @@
 server:
   port: 8888
+  address: 0.0.0.0
 
 jwt:
-  secret: "dts_microservices_secret_key_for_jwt_verification_2026_super_secure_key_384_bits"
+  secret: "${JWT_ACCESS_SECRET:uPq3xK8mR5vY2wZ9aB4cD7eF1gH3iJ6kL0nO5pQ8rS2tU4vW6xY9zA1bC3dE7fG9}"
 
 spring:
   application:
@@ -11,99 +12,75 @@ spring:
     gateway:
       discovery:
         locator:
-          enabled: true # Cho phép tự động tìm service qua Eureka
+          enabled: ${EUREKA_ENABLED:false}
           lower-case-service-id: true
-      # Cấu hình CORS cho phép Frontend (React/Vite) kết nối không bị chặn
       globalcors:
         cors-configurations:
           '[/**]':
             allowedOrigins:
               - "http://localhost:3000"
-              - "http://localhost:5173"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
+              - "http://hoangcn.com:3000"
+            allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
 
-      # Cấu hình Route chuyển tiếp request tới các Microservices bên dưới
       routes:
-        # 1. Identity Service (Đăng nhập, phân quyền)
+        # 1. Identity Service
         - id: identity-service
-          uri: lb://identity-service
+          uri: ${IDENTITY_SERVICE_URL:http://dts-identity-service:8081}
           predicates:
-            - Path=/api/v1/auth/**, /api/v1/users/**
-
-        # 2. Content Builder Service (Xây dựng nội dung)
-        - id: content-builder-internal-block
-          uri: no://op
-          predicates:
-            - Path=/api/v1/content-builder/internal/**
+            - Path=/api/identity/**, /api/v1/auth/**, /api/v1/users/**
           filters:
-            - SetStatus=403
-        - id: content-builder-service
-          uri: lb://content-builder
-          predicates:
-            - Path=/api/v1/content-builder/**
+            - RewritePath=/api/identity/(?<segment>.*), /api/v1/$\{segment}
 
-        # 3. Examination Service (Thi thử)
-        - id: examination-service
-          uri: lb://examination
-          predicates:
-            - Path=/api/v1/exams/**, /api/v1/exam-criterias/**, /api/v1/exam-rules/**, /api/v1/exam-structures/**, /api/v1/exam-sessions/**, /api/v1/exam-versions/**
-
-        # 4. Practice Service (Ôn luyện)
+        # 2. Practice Service & Question Images
         - id: practice-service
-          uri: lb://practice-service
+          uri: ${PRACTICE_SERVICE_URL:http://dts-practice-service:8087}
           predicates:
-            - Path=/api/v1/practices/**
+            - Path=/api/practice/**, /api/v1/practices/**, /api/v1/exams/**, /api/v1/questions/**, /api/v1/exam-sessions/**
+          filters:
+            - RewritePath=/api/practice/(?<segment>.*), /api/v1/$\{segment}
 
-        # 5. Progress Service (Theo dõi tiến độ)
+        - id: practice-question-images
+          uri: ${PRACTICE_SERVICE_URL:http://dts-practice-service:8087}
+          predicates:
+            - Path=/question-images/**
+
+        # 3. Progress Service
         - id: progress-service
-          uri: lb://progress-service
+          uri: ${PROGRESS_SERVICE_URL:http://dts-progress:8083}
           predicates:
-            - Path=/api/v1/progress/**
+            - Path=/api/progress/**, /api/v1/progress/**
+          filters:
+            - RewritePath=/api/progress/(?<segment>.*), /api/v1/$\{segment}
 
-
-        # 7. Media Storage Service (Lưu hình ảnh, video, audio)
-        - id: media-service
-          uri: lb://media
+        # 4. Content Builder Service
+        - id: content-builder-service
+          uri: ${CONTENT_BUILDER_SERVICE_URL:http://dts-content-builder:8082}
           predicates:
-            - Path=/api/v1/media/**
+            - Path=/api/content-builder/**
+          filters:
+            - RewritePath=/api/content-builder/(?<segment>.*), /api/v1/content-builder/$\{segment}
 
-        # 8. Declaration Service (Định danh)
-        - id: declaration-service
-          uri: lb://declaration-service
+        # 5. Examination Service
+        - id: examination-service
+          uri: ${EXAMINATION_SERVICE_URL:http://dts-examination:8088}
           predicates:
-            - Path=/api/v1/declarations/**
-
-        # 9. Learning History Service (Lịch sử học)
-        - id: learning-history-service
-          uri: lb://learning-history-service
-          predicates:
-            - Path=/api/v1/history/**
-
-        # 10. Tracking Service (Kết quả)
-        - id: tracking-service
-          uri: lb://tracking-service
-          predicates:
-            - Path=/api/v1/tracking/**
+            - Path=/api/examination/**
+          filters:
+            - RewritePath=/api/examination/(?<segment>.*), /api/v1/$\{segment}
 
 logging:
   level:
     root: INFO
-    org.springframework.cloud.gateway: DEBUG
-    org.springframework.http.server.reactive: DEBUG
+    org.springframework.cloud.gateway: INFO
+    org.springframework.http.server.reactive: INFO
 
-# Cấu hình Eureka Client
 eureka:
   instance:
     prefer-ip-address: true
   client:
-    register-with-eureka: true
-    fetch-registry: true
+    register-with-eureka: ${EUREKA_ENABLED:false}
+    fetch-registry: ${EUREKA_ENABLED:false}
     service-url:
       defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}

@@ -69,6 +69,10 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
             mkdir -p ${{ env.DEPLOY_DIR }}
+            # Ensure shared Docker network exists
+            docker network create dts-network || true
+            # Open gateway port in firewall
+            ufw allow 8888/tcp || true
 
       - name: Copy docker-compose to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -90,6 +94,10 @@ jobs:
             cd ${{ env.DEPLOY_DIR }}
             mv -f docker-compose.prod.yml docker-compose.yml
             export GITHUB_OWNER=${{ github.repository_owner }}
+            # Login to GHCR to pull private image
+            docker login ghcr.io -u phamthanhlong100504-xpnd -p ${{ secrets.GHCR_TOKEN }}
             docker compose pull
             docker compose up -d
+            # Verify container is running
+            docker compose ps -a | grep -q Up || { echo "ERROR: gateway-service not running"; exit 1; }
             docker image prune -a -f
