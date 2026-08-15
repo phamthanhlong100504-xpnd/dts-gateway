@@ -73,8 +73,10 @@ spring:
         # 6. Result Service
         # dts-result không có prefix /api/v1 — endpoints ở dạng /v1/results/me/**
         # → bỏ hoàn toàn prefix /api/result, giữ nguyên phần còn lại (gồm /v1/...)
+        # dts-result deploy trên VPS hoangcn.com (36.50.176.197), KHÔNG cùng docker host với
+        # gateway → dùng public address (container name `dts-result` không resolve được ở đây)
         - id: result-service
-          uri: ${RESULT_SERVICE_URL:http://dts-result:8080}
+          uri: ${RESULT_SERVICE_URL:http://hoangcn.com:8086}
           predicates:
             - Path=/api/result/**
           filters:
