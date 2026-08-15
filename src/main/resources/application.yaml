@@ -70,6 +70,16 @@ spring:
           filters:
             - RewritePath=/api/examination/v1/(?<segment>.*), /api/v1/$\{segment}
 
+        # 6. Result Service
+        # dts-result không có prefix /api/v1 — endpoints ở dạng /v1/results/me/**
+        # → bỏ hoàn toàn prefix /api/result, giữ nguyên phần còn lại (gồm /v1/...)
+        - id: result-service
+          uri: ${RESULT_SERVICE_URL:http://dts-result:8080}
+          predicates:
+            - Path=/api/result/**
+          filters:
+            - RewritePath=/api/result/(?<segment>.*), /$\{segment}
+
 logging:
   level:
     root: INFO
