@@ -82,6 +82,12 @@ spring:
           filters:
             - RewritePath=/api/result/(?<segment>.*), /$\{segment}
 
+        # 7. Media Service
+        - id: media-service
+          uri: ${MEDIA_SERVICE_URL:http://dts-media:8080}
+          predicates:
+            - Path=/api/v1/media/**
+
 logging:
   level:
     root: INFO
