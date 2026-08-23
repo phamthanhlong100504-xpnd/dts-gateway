@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * GlobalFilter xác thực JWT Token cho tất cả các Request đi qua API Gateway.
  */
-@Component
+// @Component
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
     private static final Logger log = LoggerFactory.getLogger(AuthenticationFilter.class);
