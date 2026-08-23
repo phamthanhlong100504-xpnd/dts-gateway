@@ -11,7 +11,7 @@ services:
       IDENTITY_SERVICE_URL: "http://dts-identity-service:8081"
       PRACTICE_SERVICE_URL: "http://dts-practice-service:8087"
       PROGRESS_SERVICE_URL: "http://dts-progress:8083"
-      MEDIA_SERVICE_URL: "http://dts-media:8080"
+      MEDIA_SERVICE_URL: "http://hoangcn.com:8080"
     networks:
       - dts-network
 
