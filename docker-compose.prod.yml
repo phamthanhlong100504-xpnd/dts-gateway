@@ -12,6 +12,8 @@ services:
       PRACTICE_SERVICE_URL: "http://dts-practice-service:8087"
       PROGRESS_SERVICE_URL: "http://dts-progress:8083"
       MEDIA_SERVICE_URL: "http://media-service:8080"
+      EXAMINATION_SERVICE_URL: "http://examination:8088"
+      RESULT_SERVICE_URL: "http://dts-result:8080"
     networks:
       - dts-network
 
