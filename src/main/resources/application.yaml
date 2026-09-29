@@ -20,6 +20,7 @@ spring:
             allowedOrigins:
               - "http://localhost:3000"
               - "http://hoangcn.com:3000"
+              - "http://103.20.96.85:3000"
             allowedMethods: "*"
             allowedHeaders: "*"
             allowCredentials: true
