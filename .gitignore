@@ -31,3 +31,20 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# DTS local generated files and development backups
+/bin/
+/handoff/
+*.screen12-*.bak
+/hs_err_pid*.log
+/replay_pid*.log
+
+# Private environment and transient maintenance output.
+.env
+.env.*
+!.env.example
+*.log
+/logs/
+/_local/
+__pycache__/
+*.py[cod]
