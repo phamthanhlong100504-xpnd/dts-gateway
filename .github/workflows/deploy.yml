@@ -10,7 +10,6 @@ permissions:
 
 env:
   GATEWAY_IMAGE: ghcr.io/${{ github.repository_owner }}/gateway-service
-  EUREKA_IMAGE: ghcr.io/${{ github.repository_owner }}/eureka-server
   DEPLOY_DIR: /dts/gateway
 
 jobs:
@@ -31,12 +30,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-maven-
 
-      - name: Build Eureka Server
-        working-directory: ./eureka-server
-        run: |
-          chmod +x mvnw
-          ./mvnw clean package -B -DskipTests
-
       - name: Build Gateway Service
         run: |
           chmod +x mvnw
@@ -54,12 +47,6 @@ jobs:
           docker build -t $GATEWAY_IMAGE:latest -t $GATEWAY_IMAGE:${{ github.sha }} .
           docker push $GATEWAY_IMAGE:latest
           docker push $GATEWAY_IMAGE:${{ github.sha }}
-          
-          # Eureka
-          cd eureka-server
-          docker build -t $EUREKA_IMAGE:latest -t $EUREKA_IMAGE:${{ github.sha }} .
-          docker push $EUREKA_IMAGE:latest
-          docker push $EUREKA_IMAGE:${{ github.sha }}
 
       - name: Prepare VPS Directory
         uses: appleboy/ssh-action@v1.2.2
