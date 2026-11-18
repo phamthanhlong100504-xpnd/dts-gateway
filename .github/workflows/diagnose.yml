@@ -17,11 +17,13 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "=== PRACTICE CONTAINER ENVIRONMENT ==="
-            docker inspect dts-practice-service --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -i "SIMULATION" || true
-            echo "=== SEARCHING EXACT TRACEID ==="
-            docker logs dts-practice-service 2>&1 | grep -C 5 "5ac55481" || true
-            echo "=== SEARCHING SIMULATION ERROR ==="
-            docker logs dts-practice-service 2>&1 | grep -C 5 "Simulation HTTP" || true
-            docker logs dts-practice-service 2>&1 | grep -C 5 "Simulation thumbnail" || true
+            echo "=== SEARCHING USER REQUEST TRACEID (2a273071) ==="
+            docker logs dts-practice-service 2>&1 | grep -C 10 "2a273071" || true
+            echo "=== ALL SIMULATION ERRORS IN LOG ==="
+            docker logs dts-practice-service 2>&1 | grep -C 8 "Simulation HTTP error" || true
+            docker logs dts-practice-service 2>&1 | grep -C 8 "Simulation HTTP call failed" || true
+            docker logs dts-practice-service 2>&1 | grep -C 8 "Simulation thumbnail batch" || true
+            docker logs dts-practice-service 2>&1 | grep -C 8 "Simulation HTTP interrupted" || true
+            echo "=== TESTING HTTP CALL TO MEDIA FROM PRACTICE CONTAINER ==="
+            docker exec dts-practice-service wget -qO- --timeout=5 http://103.20.96.85:8080/api/v1/media/simulation-catalog-thumbnail 2>&1 || true
 
