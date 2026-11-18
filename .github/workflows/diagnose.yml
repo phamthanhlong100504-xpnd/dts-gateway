@@ -17,8 +17,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "=== PRACTICE LOGS FOR SIMULATION ==="
-            docker logs dts-practice-service 2>&1 | grep -i -C 3 "Simulation" | tail -n 60 || true
-            echo "=== PRACTICE LOGS TAIL 60 ==="
-            docker logs dts-practice-service --tail 60 || true
+            echo "=== PRACTICE CONTAINER ENVIRONMENT ==="
+            docker inspect dts-practice-service --format '{{range .Config.Env}}{{println .}}{{end}}' | grep -i "SIMULATION" || true
+            echo "=== SEARCHING EXACT TRACEID ==="
+            docker logs dts-practice-service 2>&1 | grep -C 5 "5ac55481" || true
+            echo "=== SEARCHING SIMULATION ERROR ==="
+            docker logs dts-practice-service 2>&1 | grep -C 5 "Simulation HTTP" || true
+            docker logs dts-practice-service 2>&1 | grep -C 5 "Simulation thumbnail" || true
 
