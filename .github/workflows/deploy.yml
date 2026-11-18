@@ -78,4 +78,10 @@ jobs:
             docker compose up -d
             docker compose ps -a | grep -q Up || { echo "ERROR: gateway-service not running"; exit 1; }
             docker restart dts-practice-service || true
+            echo "=== DOCKER CONTAINERS STATUS ==="
+            docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo "=== PRACTICE SERVICE LOGS ==="
+            docker logs dts-practice-service --tail 80 || true
+            echo "=== MEDIA SERVICE LOGS ==="
+            docker logs media-service --tail 80 || true
             docker image prune -a -f
