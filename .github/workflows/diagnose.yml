@@ -17,16 +17,11 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "=== HOST INFO ==="
-            uname -a
-            hostname -I
-            echo "=== /dts DIRECTORY CONTENTS ==="
-            ls -la /dts/
-            echo "=== /dts/media CONTENTS ==="
-            ls -la /dts/media/ || true
-            echo "=== DOCKER COMPOSE IN /dts/media ==="
-            cd /dts/media && docker compose ps -a || true
-            cd /dts/media && docker compose config || true
-            echo "=== ALL RUNNING/STOPPED CONTAINERS ==="
-            docker ps -a
+            echo "=== TESTING CONNECTIVITY TO VPS 1 (103.20.96.85) FROM VPS 2 ==="
+            echo "--- Identity 8081 ---"
+            curl -s -i "http://103.20.96.85:8081/actuator/health" --max-time 5 || true
+            echo "--- Media 8080 ---"
+            curl -s -i "http://103.20.96.85:8080/actuator/health" --max-time 5 || true
+            echo "--- Media MinIO 9000 ---"
+            curl -s -i "http://103.20.96.85:9000/minio/health/live" --max-time 5 || true
 
