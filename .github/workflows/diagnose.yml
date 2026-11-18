@@ -17,16 +17,16 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "=== ALL DOCKER CONTAINERS (PS -A) ==="
-            docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-            echo "=== MEDIA-SERVICE LOGS ==="
-            docker logs media-service --tail 100 || true
-            echo "=== MEDIA-MINIO LOGS ==="
-            docker logs media-minio --tail 50 || true
-            echo "=== KAFKA LOGS ==="
-            docker logs kafka --tail 50 || true
-            echo "=== ZOOKEEPER LOGS ==="
-            docker logs media-zookeeper --tail 50 || true
-            echo "=== PRACTICE SERVICE LOGS ==="
-            docker logs dts-practice-service --tail 100 || true
+            echo "=== HOST INFO ==="
+            uname -a
+            hostname -I
+            echo "=== /dts DIRECTORY CONTENTS ==="
+            ls -la /dts/
+            echo "=== /dts/media CONTENTS ==="
+            ls -la /dts/media/ || true
+            echo "=== DOCKER COMPOSE IN /dts/media ==="
+            cd /dts/media && docker compose ps -a || true
+            cd /dts/media && docker compose config || true
+            echo "=== ALL RUNNING/STOPPED CONTAINERS ==="
+            docker ps -a
 
