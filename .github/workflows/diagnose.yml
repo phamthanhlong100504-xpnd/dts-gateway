@@ -17,9 +17,16 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "=== DOCKER CONTAINERS ==="
-            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-            echo "=== PRACTICE SERVICE LOGS (LAST 120 LINES) ==="
-            docker logs dts-practice-service --tail 120
-            echo "=== MEDIA SERVICE LOGS (LAST 120 LINES) ==="
-            docker logs media-service --tail 120
+            echo "=== ALL DOCKER CONTAINERS (PS -A) ==="
+            docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo "=== MEDIA-SERVICE LOGS ==="
+            docker logs media-service --tail 100 || true
+            echo "=== MEDIA-MINIO LOGS ==="
+            docker logs media-minio --tail 50 || true
+            echo "=== KAFKA LOGS ==="
+            docker logs kafka --tail 50 || true
+            echo "=== ZOOKEEPER LOGS ==="
+            docker logs media-zookeeper --tail 50 || true
+            echo "=== PRACTICE SERVICE LOGS ==="
+            docker logs dts-practice-service --tail 100 || true
+
