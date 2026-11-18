@@ -17,11 +17,8 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "=== TESTING CONNECTIVITY TO VPS 1 (103.20.96.85) FROM VPS 2 ==="
-            echo "--- Identity 8081 ---"
-            curl -s -i "http://103.20.96.85:8081/actuator/health" --max-time 5 || true
-            echo "--- Media 8080 ---"
-            curl -s -i "http://103.20.96.85:8080/actuator/health" --max-time 5 || true
-            echo "--- Media MinIO 9000 ---"
-            curl -s -i "http://103.20.96.85:9000/minio/health/live" --max-time 5 || true
+            echo "=== PRACTICE LOGS FOR SIMULATION ==="
+            docker logs dts-practice-service 2>&1 | grep -i -C 3 "Simulation" | tail -n 60 || true
+            echo "=== PRACTICE LOGS TAIL 60 ==="
+            docker logs dts-practice-service --tail 60 || true
 
