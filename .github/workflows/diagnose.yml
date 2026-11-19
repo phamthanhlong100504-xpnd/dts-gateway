@@ -2,9 +2,6 @@ name: VPS Diagnostics
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/diagnose.yml'
 
 jobs:
   diagnose:
@@ -18,8 +15,7 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           timeout: 5m
           script: |
-            echo "=== 1. TEST FRONTEND HTTP FROM VPS 2 ==="
-            curl -I http://103.20.96.85:3000/practice/simulations/chapters/1 || true
-
-            echo "=== 2. TEST PRACTICE SERVICE ACTUATOR DIRECT ==="
+            echo "=== DOCKER PS ==="
+            docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            echo "=== PRACTICE HEALTH ==="
             docker run --rm --network dts-network curlimages/curl:latest http://dts-practice-service:8087/actuator/health || true
