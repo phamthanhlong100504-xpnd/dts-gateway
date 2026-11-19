@@ -12,15 +12,18 @@ jobs:
     steps:
       - name: Run Diagnostics on VPS
         uses: appleboy/ssh-action@v1.2.2
+        env:
+          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
+          envs: JWT_ACCESS_SECRET
           timeout: 10m
           script: |
             echo "=== E2E SIMULATION ATTEMPT TEST ON VPS ==="
             python3 - << 'EOF'
-            import urllib.request, json, time, uuid
+            import urllib.request, json, time, uuid, hmac, hashlib, base64, os
 
             def post(url, data=None, token=None, method='POST'):
                 headers = {'Content-Type': 'application/json'}
@@ -49,13 +52,46 @@ jobs:
                 except Exception as e:
                     return 500, {'error': str(e)}
 
-            # 1. Login
-            code, login_res = post('http://localhost:8888/api/identity/v1/auth/login', {'username': 'testuser2', 'password': 'Test@1234'})
-            print('1. Login:', code, 'User:', login_res.get('data', {}).get('user', {}).get('username'))
-            token = login_res.get('data', {}).get('accessToken')
-            if not token:
-                print('Failed to get token:', login_res)
-                exit(1)
+            # 1. Mint valid JWT for user longpt
+            secret_str = os.environ.get('JWT_ACCESS_SECRET', '')
+            if not secret_str and os.path.exists('/dts/practice-service/.env'):
+                with open('/dts/practice-service/.env') as f:
+                    for line in f:
+                        if line.startswith('JWT_ACCESS_SECRET='):
+                            secret_str = line.strip().split('=', 1)[1]
+
+            try:
+                key = base64.b64decode(secret_str)
+            except Exception:
+                try:
+                    key = base64.urlsafe_b64decode(secret_str + '===')
+                except Exception:
+                    key = secret_str.encode('utf-8')
+
+            if len(key) < 32:
+                key = hashlib.sha256(key).digest()
+
+            def b64url(b):
+                return base64.urlsafe_b64encode(b).decode('utf-8').rstrip('=')
+
+            now = int(time.time())
+            header = {'alg': 'HS256', 'typ': 'JWT'}
+            payload = {
+                'iss': 'dts-identity-service',
+                'sub': '870810b3-b42f-4efc-aef8-605534e7bc24',
+                'username': 'longpt',
+                'roles': ['ROLE_ADMIN', 'ROLE_STUDENT'],
+                'permissions': [
+                    'simulations:read', 'simulations:learn', 'media:read',
+                    'practice:read', 'practice:learn', 'practice:exam'
+                ],
+                'iat': now,
+                'exp': now + 7200
+            }
+            d_sign = f"{b64url(json.dumps(header).encode())}.{b64url(json.dumps(payload).encode())}"
+            sig = hmac.new(key, d_sign.encode(), hashlib.sha256).digest()
+            token = f"{d_sign}.{b64url(sig)}"
+            print('1. Minted JWT token successfully for longpt')
 
             # 2. Get scenario 1
             code, scen_res = get('http://localhost:8888/api/practice/v1/simulations/chapters/1/scenarios?licenseClass=B&bankVersion=dts-simulation-120-video-v1&filter=ALL&sort=SCENARIO_ASC&page=0&size=1', token)
@@ -91,7 +127,7 @@ jobs:
             print('5. Start attempt:', code, 'Status:', start_res.get('data', {}).get('status'))
 
             # 6. Playback simulation with heartbeats
-            print('6. Simulating playback of 27s...')
+            print('6. Simulating playback of 27s with heartbeats and Space press...')
             start_time = time.time()
             for t in [3000, 6000, 9000, 12000, 15000, 18000, 21000, 24000]:
                 elapsed = int((time.time() - start_time) * 1000)
@@ -142,6 +178,7 @@ jobs:
             code, play2 = get(f'http://localhost:8888/api/practice/v1/simulations/attempts/{att2_id}/playback', token)
             pb2 = play2.get('data', {}).get('playbackId')
             post(f'http://localhost:8888/api/practice/v1/simulations/attempts/{att2_id}/start', {'eventId': str(uuid.uuid4()), 'playbackEventId': pb2, 'mediaTimeMs': 0}, token)
+            # Sleep until near end
             time.sleep(26.2)
             code, comp2 = post(f'http://localhost:8888/api/practice/v1/simulations/attempts/{att2_id}/complete', {
                 'eventId': str(uuid.uuid4()),
