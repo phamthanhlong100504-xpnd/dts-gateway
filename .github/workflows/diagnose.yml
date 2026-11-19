@@ -50,7 +50,7 @@ jobs:
                     return 500, {'error': str(e)}
 
             # 1. Login
-            code, login_res = post('http://localhost:8888/api/identity/v1/auth/login', {'identifier': 'testuser2', 'password': 'Test@1234'})
+            code, login_res = post('http://localhost:8888/api/identity/v1/auth/login', {'username': 'testuser2', 'password': 'Test@1234'})
             print('1. Login:', code, 'User:', login_res.get('data', {}).get('user', {}).get('username'))
             token = login_res.get('data', {}).get('accessToken')
             if not token:
