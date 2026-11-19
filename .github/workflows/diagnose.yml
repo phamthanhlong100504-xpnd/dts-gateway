@@ -17,7 +17,139 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "=== PRACTICE LOGS FILTERED (NO EUREKA) ==="
-            docker logs dts-practice-service 2>&1 | grep -v "Eureka" | grep -v "DiscoveryClient" | tail -n 200
-            echo "=== PRACTICE LOGS WITH ERRORS / CONFLICTS ==="
-            docker logs dts-practice-service 2>&1 | grep -iE "SIMULATION_|conflict|Exception|500|409|400" | tail -n 100
+            echo "=== E2E SIMULATION ATTEMPT TEST ON VPS ==="
+            python3 - << 'EOF'
+import urllib.request, json, time, uuid
+
+def post(url, data=None, token=None, method='POST'):
+    headers = {'Content-Type': 'application/json'}
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    body = json.dumps(data).encode('utf-8') if data else None
+    req = urllib.request.Request(url, data=body, headers=headers, method=method)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return resp.status, json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read().decode())
+    except Exception as e:
+        return 500, {'error': str(e)}
+
+def get(url, token=None):
+    headers = {}
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return resp.status, json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read().decode())
+    except Exception as e:
+        return 500, {'error': str(e)}
+
+# 1. Login
+code, login_res = post('http://localhost:8888/api/identity/v1/auth/login', {'identifier': 'testuser2', 'password': 'Test@1234'})
+print('1. Login:', code, 'User:', login_res.get('data', {}).get('user', {}).get('username'))
+token = login_res.get('data', {}).get('accessToken')
+if not token:
+    print('Failed to get token:', login_res)
+    exit(1)
+
+# 2. Get scenario 1
+code, scen_res = get('http://localhost:8888/api/practice/v1/simulations/chapters/1/scenarios?licenseClass=B&bankVersion=dts-simulation-120-video-v1&filter=ALL&sort=SCENARIO_ASC&page=0&size=1', token)
+print('2. Scenarios:', code, 'Total:', scen_res.get('data', {}).get('totalElements'))
+scenario = scen_res.get('data', {}).get('content', [{}])[0]
+scenario_id = scenario.get('id')
+duration_ms = scenario.get('durationMs', 27000)
+print('   Scenario ID:', scenario_id, 'DurationMs:', duration_ms)
+
+# 3. Create attempt
+code, att_res = post('http://localhost:8888/api/practice/v1/simulations/attempts', {
+    'eventId': str(uuid.uuid4()),
+    'scenarioId': scenario_id,
+    'licenseClass': 'B',
+    'bankVersion': 'dts-simulation-120-video-v1'
+}, token)
+print('3. Create Attempt:', code, att_res.get('data', {}).get('attemptId'))
+att = att_res.get('data', {})
+attempt_id = att.get('attemptId')
+playback_id = att.get('playbackEventId')
+
+# 4. Playback
+code, play_res = get(f'http://localhost:8888/api/practice/v1/simulations/attempts/{attempt_id}/playback', token)
+print('4. Playback grant:', code, play_res.get('data', {}).get('playbackId'))
+playback_id = play_res.get('data', {}).get('playbackId', playback_id)
+
+# 5. Start
+code, start_res = post(f'http://localhost:8888/api/practice/v1/simulations/attempts/{attempt_id}/start', {
+    'eventId': str(uuid.uuid4()),
+    'playbackEventId': playback_id,
+    'mediaTimeMs': 0
+}, token)
+print('5. Start attempt:', code, 'Status:', start_res.get('data', {}).get('status'))
+
+# 6. Playback simulation with heartbeats
+print('6. Simulating playback of 27s...')
+start_time = time.time()
+for t in [3000, 6000, 9000, 12000, 15000, 18000, 21000, 24000]:
+    elapsed = int((time.time() - start_time) * 1000)
+    sleep_needed = (t - elapsed) / 1000.0
+    if sleep_needed > 0:
+        time.sleep(sleep_needed)
+    code, hb_res = post(f'http://localhost:8888/api/practice/v1/simulations/attempts/{attempt_id}/heartbeat', {
+        'eventId': str(uuid.uuid4()),
+        'playbackEventId': playback_id,
+        'mediaTimeMs': t
+    }, token)
+    if t == 12000:
+        # User presses Space at 12000ms
+        code_resp, resp_data = post(f'http://localhost:8888/api/practice/v1/simulations/attempts/{attempt_id}/response', {
+            'eventId': str(uuid.uuid4()),
+            'playbackEventId': playback_id,
+            'mediaTimeMs': 12000
+        }, token, method='PUT')
+        print('   -> Pressed Space at 12000ms:', code_resp, 'FirstResponseMs:', resp_data.get('data', {}).get('firstResponseMs'))
+
+# Wait until video completes at 27.0s
+elapsed = (time.time() - start_time)
+if elapsed < 27.0:
+    time.sleep(27.0 - elapsed)
+
+# 7. Complete with 27000ms
+code, comp_res = post(f'http://localhost:8888/api/practice/v1/simulations/attempts/{attempt_id}/complete', {
+    'eventId': str(uuid.uuid4()),
+    'playbackEventId': playback_id,
+    'mediaTimeMs': 27000
+}, token)
+print('7. Complete attempt (27000ms):', code, 'Status:', comp_res.get('data', {}).get('status'))
+if comp_res.get('data', {}).get('result'):
+    res = comp_res['data']['result']
+    print('   SUCCESS! Score:', res.get('score'), '/ 5, Status:', res.get('status'), 'ResponseMs:', res.get('firstResponseMs'))
+else:
+    print('   Complete error / details:', comp_res)
+
+# 8. Test overflow tolerance with another attempt (e.g. 27098ms)
+print('8. Testing duration overflow tolerance (27098ms > 27000ms)...')
+code, att2_res = post('http://localhost:8888/api/practice/v1/simulations/attempts', {
+    'eventId': str(uuid.uuid4()),
+    'scenarioId': scenario_id,
+    'licenseClass': 'B',
+    'bankVersion': 'dts-simulation-120-video-v1'
+}, token)
+att2_id = att2_res.get('data', {}).get('attemptId')
+code, play2 = get(f'http://localhost:8888/api/practice/v1/simulations/attempts/{att2_id}/playback', token)
+pb2 = play2.get('data', {}).get('playbackId')
+post(f'http://localhost:8888/api/practice/v1/simulations/attempts/{att2_id}/start', {'eventId': str(uuid.uuid4()), 'playbackEventId': pb2, 'mediaTimeMs': 0}, token)
+time.sleep(26.2)
+code, comp2 = post(f'http://localhost:8888/api/practice/v1/simulations/attempts/{att2_id}/complete', {
+    'eventId': str(uuid.uuid4()),
+    'playbackEventId': pb2,
+    'mediaTimeMs': 27098
+}, token)
+print('   Complete with 27098ms overflow:', code, 'Status:', comp2.get('data', {}).get('status'))
+if comp2.get('data', {}).get('result'):
+    print('   OVERFLOW TEST PASSED! Score:', comp2['data']['result'].get('score'), 'Status:', comp2['data']['result'].get('status'))
+else:
+    print('   Details:', comp2)
+EOF
