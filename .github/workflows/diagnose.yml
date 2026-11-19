@@ -16,35 +16,10 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
-          timeout: 10m
+          timeout: 5m
           script: |
-            echo "=== 1. LISTENING PORTS ON HOST ==="
-            ss -tlpn | grep -E '808|8888' || true
+            echo "=== 1. TEST FRONTEND HTTP FROM VPS 2 ==="
+            curl -I http://103.20.96.85:3000/practice/simulations/chapters/1 || true
 
-            echo "=== 2. TEST CURL TO GATEWAY AND DIRECT TO PRACTICE CONTAINER ==="
-            TOKEN=$(docker run --rm -v /dts/practice-service/.env:/env:ro python:3.11-slim python3 -c "
-            import json, time, hmac, hashlib, base64, os
-            secret_str = 'uPq3xK8mR5vY2wZ9aB4cD7eF1gH3iJ6kL0nO5pQ8rS2tU4vW6xY9zA1bC3dE7fG9'
-            if os.path.exists('/env'):
-                with open('/env') as f:
-                    for line in f:
-                        if line.startswith('JWT_ACCESS_SECRET='):
-                            val = line.strip().split('=', 1)[1]
-                            if val: secret_str = val
-            key = base64.b64decode(secret_str) if len(secret_str) > 40 else secret_str.encode()
-            if len(key) < 32: key = hashlib.sha256(key).digest()
-            def b64url(b): return base64.urlsafe_b64encode(b).decode().rstrip('=')
-            now = int(time.time())
-            h = b64url(json.dumps({'alg':'HS256','typ':'JWT'}).encode())
-            p = b64url(json.dumps({'iss':'dts-identity-service','sub':'870810b3-b42f-4efc-aef8-605534e7bc24','username':'longpt','roles':['ROLE_ADMIN'],'permissions':['simulations:read','simulations:learn'],'iat':now,'exp':now+3600}).encode())
-            sig = b64url(hmac.new(key, f'{h}.{p}'.encode(), hashlib.sha256).digest())
-            print(f'{h}.{p}.{sig}')
-            ")
-
-            echo "TOKEN MINTED: ${TOKEN:0:20}..."
-
-            echo "=== 3. CURL THROUGH GATEWAY 8888 ==="
-            curl -v -H "Authorization: Bearer $TOKEN" "http://localhost:8888/api/practice/v1/simulations/chapters/1/scenarios?licenseClass=B&bankVersion=dts-simulation-120-video-v1&filter=ALL&sort=SCENARIO_ASC&page=0&size=1" || true
-
-            echo "=== 4. CURL FROM INSIDE DTS-NETWORK TO PRACTICE SERVICE DIRECTLY ==="
-            docker run --rm --network dts-network curlimages/curl:latest -v -H "Authorization: Bearer $TOKEN" "http://dts-practice-service:8087/api/v1/simulations/chapters/1/scenarios?licenseClass=B&bankVersion=dts-simulation-120-video-v1&filter=ALL&sort=SCENARIO_ASC&page=0&size=1" || true
+            echo "=== 2. TEST PRACTICE SERVICE ACTUATOR DIRECT ==="
+            docker run --rm --network dts-network curlimages/curl:latest http://dts-practice-service:8087/actuator/health || true
