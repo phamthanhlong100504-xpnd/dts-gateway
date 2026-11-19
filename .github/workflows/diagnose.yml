@@ -17,5 +17,7 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           script: |
-            echo "=== RECENT PRACTICE SERVICE LOGS ==="
-            docker logs dts-practice-service --tail 120 2>&1
+            echo "=== PRACTICE LOGS FILTERED (NO EUREKA) ==="
+            docker logs dts-practice-service 2>&1 | grep -v "Eureka" | grep -v "DiscoveryClient" | tail -n 200
+            echo "=== PRACTICE LOGS WITH ERRORS / CONFLICTS ==="
+            docker logs dts-practice-service 2>&1 | grep -iE "SIMULATION_|conflict|Exception|500|409|400" | tail -n 100
