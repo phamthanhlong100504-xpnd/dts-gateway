@@ -34,6 +34,22 @@ spring:
           filters:
             - RewritePath=/api/identity/v1/(?<segment>.*), /api/v1/$\{segment}
 
+        # 1.5 Progress Service Redirect for Legacy Practice Progress Endpoints
+        - id: practice-progress-reroute
+          uri: ${PROGRESS_SERVICE_URL:http://dts-progress:8083}
+          predicates:
+            - Path=/api/practice/v1/learning/**, /api/practice/v1/questions/critical/**, /api/practice/v1/questions/wrong/**
+          filters:
+            - RewritePath=/api/practice/v1/(?<segment>.*), /api/v1/${segment}
+
+        # 1.6 Content Builder Redirect for Reference Content Endpoints
+        - id: practice-content-reroute
+          uri: ${CONTENT_BUILDER_SERVICE_URL:http://content-builder:8082}
+          predicates:
+            - Path=/api/practice/v1/memory-tips/**, /api/practice/v1/traffic-signs/**
+          filters:
+            - RewritePath=/api/practice/v1/(?<segment>.*), /api/v1/content-builder/${segment}
+
         # 2. Practice Service & Question Images
         - id: practice-service
           uri: ${PRACTICE_SERVICE_URL:http://dts-practice-service:8087}
