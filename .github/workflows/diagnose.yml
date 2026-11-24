@@ -17,5 +17,13 @@ jobs:
           script: |
             echo "=== DOCKER PS ==="
             docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-            echo "=== PRACTICE LOGS ==="
-            docker logs dts-practice-service --tail 100 || true
+            echo "=== PRACTICE HEALTH ==="
+            docker run --rm --network dts-network curlimages/curl curl -s http://dts-practice-service:8087/actuator/health || true
+            echo "=== PROGRESS HEALTH ==="
+            docker run --rm --network dts-network curlimages/curl curl -s http://dts-progress:8083/actuator/health || true
+            echo "=== TEST INTERNAL PROGRESS WRONG QUESTIONS ==="
+            docker run --rm --network dts-network curlimages/curl curl -s -H "X-DTS-Internal-Key: dts-internal-secret-progress-2024" "http://dts-progress:8083/internal/v1/practice/users/870810b3-b42f-4efc-aef8-605534e7bc24/wrong-questions?licenseClass=B" || true
+            echo "=== TEST INTERNAL PROGRESS CRITICAL OVERVIEW ==="
+            docker run --rm --network dts-network curlimages/curl curl -s -H "X-DTS-Internal-Key: dts-internal-secret-progress-2024" "http://dts-progress:8083/internal/v1/practice/users/870810b3-b42f-4efc-aef8-605534e7bc24/critical-overview?licenseClass=B" || true
+            echo "=== JWT SECRET ==="
+            grep JWT_ACCESS_SECRET /dts/practice-service/.env /dts/progress-service/.env /dts/gateway/.env 2>/dev/null || true
