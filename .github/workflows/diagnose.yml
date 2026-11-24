@@ -17,5 +17,5 @@ jobs:
           script: |
             echo "=== DOCKER PS ==="
             docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-            echo "=== PRACTICE HEALTH ==="
-            docker run --rm --network dts-network curlimages/curl:latest http://dts-practice-service:8087/actuator/health || true
+            echo "=== PRACTICE LOGS ==="
+            docker logs dts-practice-service --tail 100 || true
