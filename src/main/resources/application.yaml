@@ -38,7 +38,7 @@ spring:
         - id: practice-progress-reroute
           uri: ${PROGRESS_SERVICE_URL:http://dts-progress:8083}
           predicates:
-            - Path=/api/practice/v1/learning/**, /api/practice/v1/questions/critical/**, /api/practice/v1/questions/wrong/**
+            - Path=/api/practice/v1/learning/**, /api/practice/v1/questions/critical/overview, /api/practice/v1/questions/wrong/**
           filters:
             - RewritePath=/api/practice/v1/(?<segment>.*), /api/v1/${segment}
 
