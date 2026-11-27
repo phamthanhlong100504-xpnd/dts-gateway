@@ -54,7 +54,7 @@ spring:
         - id: practice-service
           uri: ${PRACTICE_SERVICE_URL:http://dts-practice-service:8087}
           predicates:
-            - Path=/api/practice/**, /api/v1/practices/**, /api/v1/exams/**, /api/v1/questions/**, /api/v1/exam-sessions/**
+            - Path=/api/practice/**, /api/v1/practices/**, /api/v1/exams/**, /api/v1/questions/**, /api/v1/exam-sessions/**, /api/v1/simulation-exams/**, /api/v1/simulations/**
           filters:
             - RewritePath=/api/practice/v1/(?<segment>.*), /api/v1/$\{segment}
 
@@ -62,6 +62,12 @@ spring:
           uri: ${PRACTICE_SERVICE_URL:http://dts-practice-service:8087}
           predicates:
             - Path=/question-images/**
+
+        # 2.5 Learning Intelligence Service (AI RAG & Student Profiling)
+        - id: learning-intelligence-service
+          uri: ${LEARNING_INTELLIGENCE_URL:http://103.20.96.85:8091}
+          predicates:
+            - Path=/api/learning-intelligence/**
 
         # 3. Progress Service
         - id: progress-service
